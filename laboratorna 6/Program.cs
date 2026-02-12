@@ -1,70 +1,65 @@
 ﻿using System.Text;
-
-namespace ChessSystem
+namespace VehicleSimulation
 {
-    // Базовий клас для шахової фігури
-    public abstract class ChessPiece
+    public interface IRefuelable
     {
-        public string Name { get; set; }
-        public string Color { get; set; }
-        public int CurX { get; set; }
-        public int CurY { get; set; }
+        void Refill();
+    }
 
-        public ChessPiece(string name, string color, int x, int y)
+    // Абстрактний базовий клас
+    public abstract class Vehicle
+    {
+        public string Brand { get; set; }
+        public int Speed { get; set; }
+
+        public Vehicle(string brand, int speed)
         {
-            Name = name;
-            Color = color;
-            CurX = x;
-            CurY = y;
+            Brand = brand;
+            Speed = speed;
+        }
+        public abstract void Move();
+    }
+
+    // Клас Car
+    public class Car : Vehicle, IRefuelable
+    {
+        public Car(string brand, int speed) : base(brand, speed) { }
+
+        public override void Move()
+        {
+            Console.WriteLine($"[Автомобіль] {Brand} їде по трасі зі швидкістю {Speed} км/год.");
         }
 
-        public abstract bool CanMove(int targetX, int targetY);
-
-        public void DisplayPosition()
+        public void Refill()
         {
-            Console.WriteLine($"{Color} {Name} зараз на позиції: [{CurX}, {CurY}]");
+            Console.WriteLine($"   -> Заправка автомобіля {Brand} бензином або дизелем...");
         }
     }
 
-    // король
-    public class King : ChessPiece
+    // Клас Airplane
+    public class Airplane : Vehicle, IRefuelable
     {
-        public King(string color, int x, int y) : base("Король", color, x, y) { }
+        public Airplane(string brand, int speed) : base(brand, speed) { }
 
-        public override bool CanMove(int targetX, int targetY)
+        public override void Move()
         {
-            // Король ходить на 1 клітинку в будь-якому напрямку
-            int deltaX = Math.Abs(targetX - CurX);
-            int deltaY = Math.Abs(targetY - CurY);
-            return deltaX <= 1 && deltaY <= 1 && !(deltaX == 0 && deltaY == 0);
+            Console.WriteLine($"[Літак] {Brand} летить у хмарах зі швидкістю {Speed} км/год.");
+        }
+
+        public void Refill()
+        {
+            Console.WriteLine($"   -> Заправка літака {Brand} авіаційним паливом...");
         }
     }
 
-    // коник
-    public class Knight : ChessPiece
+    // Клас Bicycle
+    public class Bicycle : Vehicle
     {
-        public Knight(string color, int x, int y) : base("Кінь", color, x, y) { }
+        public Bicycle(string brand, int speed) : base(brand, speed) { }
 
-        public override bool CanMove(int targetX, int targetY)
+        public override void Move()
         {
-            // Кінь ходить літерою "Г"
-            int deltaX = Math.Abs(targetX - CurX);
-            int deltaY = Math.Abs(targetY - CurY);
-            return (deltaX == 2 && deltaY == 1) || (deltaX == 1 && deltaY == 2);
-        }
-    }
-
-    // пішка 
-    public class Pawn : ChessPiece
-    {
-        public Pawn(string color, int x, int y) : base("Пішка", color, x, y) { }
-
-        public override bool CanMove(int targetX, int targetY)
-        {
-            // пішка ходить тільки вперед на 1 клітинку
-            // (Для білих Y збільшується, для чорних — зменшується)
-            int direction = (Color == "Білий") ? 1 : -1;
-            return targetX == CurX && targetY == CurY + direction;
+            Console.WriteLine($"[Велосипед] {Brand} їде по велодоріжці зі швидкістю {Speed} км/год.");
         }
     }
 
@@ -73,39 +68,39 @@ namespace ChessSystem
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
+            Random rnd = new Random();
+            Random rnd1 = new Random();
+            Random rnd2 = new Random();
+            Random rnd3 = new Random();
+            Random rnd4 = new Random();
 
-            List<ChessPiece> pieces = new List<ChessPiece>
+            List<Vehicle> vehicles = new List<Vehicle>
             {
-                new King("Білий", 4, 0),
-                new Knight("Чорний", 1, 7),
-                new Pawn("Білий", 2, 1)
+                new Car("Таврія", rnd.Next(0, 121)),
+                new Bicycle("Біцигля", rnd1.Next(0, 21)),
+                new Airplane("МіГ 29", rnd2.Next(200, 2501)),
+                new Airplane("МіГ 29 М1", rnd3.Next(200, 2501)),
+                new Car("Satsuma", rnd4.Next(0, 201))
             };
 
-            Console.WriteLine("=== Перевірка ходів шахових фігур ===\n");
+            Console.WriteLine("Початок симуляції руху\n");
 
-            Console.Write("Введіть X (1-8): ");
-            int testX = int.Parse(Console.ReadLine());
-
-            Console.Write("Введіть Y (1-8): ");
-            int testY = int.Parse(Console.ReadLine());
-            
-            if (testX < 1 || testX > 8 || testY < 1 || testY > 8)
+            foreach (var vehicle in vehicles)
             {
-                Console.WriteLine(">:( навіщо? ");
-                Console.WriteLine("в стандартних шахах поле 8x8");
-                return;
+                vehicle.Move();
+
+                if (vehicle is IRefuelable refuelableVehicle)
+                {
+                    refuelableVehicle.Refill();
+                }
+                else
+                {
+                    Console.WriteLine("   -> Цей транспорт не потребує пального.");
+                }
+                Console.WriteLine();
             }
 
-            foreach (var piece in pieces)
-            {
-                piece.DisplayPosition();
-                bool possible = piece.CanMove(testX, testY);
-
-                string result = possible ? "МОЖЕ" : "НЕ МОЖЕ";
-                Console.WriteLine($"Чи може фігура піти на [{testX}, {testY}]? Відповідь: {result}");
-                Console.WriteLine(new string('-', 40));
-            }
-
+            Console.WriteLine("Натисніть будь-яку клавішу для виходу...");
             Console.ReadKey();
         }
     }
