@@ -1,61 +1,70 @@
 ﻿using System.Text;
-namespace VehicleSimulation
+
+namespace ChessSystem
 {
-    public interface IRefuelable
+    // Базовий клас для шахової фігури
+    public abstract class ChessPiece
     {
-        void Refill();
-    }
+        public string Name { get; set; }
+        public string Color { get; set; }
+        public int CurX { get; set; }
+        public int CurY { get; set; }
 
-    // Абстрактний базовий клас
-    public abstract class Vehicle
-    {
-        public string Trans { get; set; }
-        public int Spid { get; set; }
-
-        public Vehicle(string car, int speed)
+        public ChessPiece(string name, string color, int x, int y)
         {
-            Trans = car;
-            Spid = speed;
+            Name = name;
+            Color = color;
+            CurX = x;
+            CurY = y;
         }
-        public abstract void Move();
-    }
 
-    // Клас Car
-    public class Car : Vehicle, IRefuelable
-    {
-        public Car(string brand, int speed) : base(brand, speed) { }
-        public override void Move()
+        public abstract bool CanMove(int targetX, int targetY);
+
+        public void DisplayPosition()
         {
-            Console.WriteLine($"{Trans} їде по трасі зі швидкістю {Spid} км/год.");
-        }
-        public void Refill()
-        {
-            Console.WriteLine($">>>Заправка автомобіля {Trans} бензином або дизелем...");
+            Console.WriteLine($"{Color} {Name} зараз на позиції: [{CurX}, {CurY}]");
         }
     }
 
-    // Клас Airplane
-    public class Airplane : Vehicle, IRefuelable
+    // король
+    public class King : ChessPiece
     {
-        public Airplane(string plane, int speed) : base(plane, speed) { }
-        public override void Move()
+        public King(string color, int x, int y) : base("Король", color, x, y) { }
+
+        public override bool CanMove(int targetX, int targetY)
         {
-            Console.WriteLine($"{Trans} летить зі швидкістю {Spid} км/год.");
-        }
-        public void Refill()
-        {
-            Console.WriteLine($">>>Заправка літака {Trans} авіаційним паливом...");
+            // Король ходить на 1 клітинку в будь-якому напрямку
+            int deltaX = Math.Abs(targetX - CurX);
+            int deltaY = Math.Abs(targetY - CurY);
+            return deltaX <= 1 && deltaY <= 1 && !(deltaX == 0 && deltaY == 0);
         }
     }
 
-    // Клас Bicycle
-    public class Bicycle : Vehicle
+    // коник
+    public class Knight : ChessPiece
     {
-        public Bicycle(string brand, int speed) : base(brand, speed) { }
+        public Knight(string color, int x, int y) : base("Кінь", color, x, y) { }
 
-        public override void Move()
+        public override bool CanMove(int targetX, int targetY)
         {
-            Console.WriteLine($"[Велосипед] {Trans} їде по велодоріжці зі швидкістю {Spid} км/год.");
+            // Кінь ходить літерою "Г"
+            int deltaX = Math.Abs(targetX - CurX);
+            int deltaY = Math.Abs(targetY - CurY);
+            return (deltaX == 2 && deltaY == 1) || (deltaX == 1 && deltaY == 2);
+        }
+    }
+
+    // пішка 
+    public class Pawn : ChessPiece
+    {
+        public Pawn(string color, int x, int y) : base("Пішка", color, x, y) { }
+
+        public override bool CanMove(int targetX, int targetY)
+        {
+            // пішка ходить тільки вперед на 1 клітинку
+            // (Для білих Y збільшується, для чорних — зменшується)
+            int direction = (Color == "Білий") ? 1 : -1;
+            return targetX == CurX && targetY == CurY + direction;
         }
     }
 
@@ -65,38 +74,38 @@ namespace VehicleSimulation
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            Random rnd = new Random();
-            Random rnd1 = new Random();
-            Random rnd2 = new Random();
-            Random rnd3 = new Random();
-
-            List<Vehicle> vehicles = new List<Vehicle>
+            List<ChessPiece> pieces = new List<ChessPiece>
             {
-                new Car("Таврія", rnd.Next(1, 121)),
-                new Bicycle("Біцигля", rnd1.Next(1, 26)),
-                new Airplane("МіГ 29", rnd2.Next(200, 2501)),
-                new Airplane("МіГ 29 М1", rnd2.Next(200, 2501)),
-                new Car("Satsuma", rnd3.Next(1, 201))
+                new King("Білий", 4, 0),
+                new Knight("Чорний", 1, 7),
+                new Pawn("Білий", 2, 1)
             };
 
-            Console.WriteLine("Початок симуляції руху\n");
+            Console.WriteLine("=== Перевірка ходів шахових фігур ===\n");
 
-            foreach (var vehicle in vehicles)
+            Console.Write("Введіть X (1-8): ");
+            int testX = int.Parse(Console.ReadLine());
+
+            Console.Write("Введіть Y (1-8): ");
+            int testY = int.Parse(Console.ReadLine());
+            
+            if (testX < 1 || testX > 8 || testY < 1 || testY > 8)
             {
-                vehicle.Move();
-
-                if (vehicle is IRefuelable refuelableVehicle)
-                {
-                    refuelableVehicle.Refill();
-                }
-                else
-                {
-                    Console.WriteLine("Цей транспорт не потребує пального.");
-                }
-                Console.WriteLine();
+                Console.WriteLine(">:( навіщо? ");
+                Console.WriteLine("в стандартних шахах поле 8x8");
+                return;
             }
 
-            Console.WriteLine("Натисніть будь-яку клавішу для виходу...");
+            foreach (var piece in pieces)
+            {
+                piece.DisplayPosition();
+                bool possible = piece.CanMove(testX, testY);
+
+                string result = possible ? "МОЖЕ" : "НЕ МОЖЕ";
+                Console.WriteLine($"Чи може фігура піти на [{testX}, {testY}]? Відповідь: {result}");
+                Console.WriteLine(new string('-', 40));
+            }
+
             Console.ReadKey();
         }
     }
